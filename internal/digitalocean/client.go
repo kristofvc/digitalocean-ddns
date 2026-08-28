@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type Client struct {
@@ -23,7 +24,13 @@ type Record struct {
 }
 
 func (c Client) FindARecord(ctx context.Context, zone, name string) (Record, error) {
-	u := fmt.Sprintf("%s/domains/%s/records?type=A&name=%s", c.BaseURL, url.PathEscape(zone), url.QueryEscape(name))
+	queryName := name
+	if name == "@" {
+		queryName = zone
+	} else if name != zone && !strings.HasSuffix(name, "."+zone) {
+		queryName = name + "." + zone
+	}
+	u := fmt.Sprintf("%s/domains/%s/records?type=A&name=%s", c.BaseURL, url.PathEscape(zone), url.QueryEscape(queryName))
 	var out struct {
 		Records []Record `json:"domain_records"`
 	}
