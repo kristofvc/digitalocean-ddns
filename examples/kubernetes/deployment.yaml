@@ -1,0 +1,21 @@
+# Example only. The real workload belongs in your GitOps repository.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: digitalocean-ddns}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: digitalocean-ddns}}
+  template:
+    metadata: {labels: {app: digitalocean-ddns}}
+    spec:
+      containers:
+        - name: updater
+          image: ghcr.io/OWNER/digitalocean-ddns:0.1.0
+          env:
+            - {name: DNS_RECORDS, value: "example.com/home,example.net/@"}
+            - name: DO_TOKEN
+              valueFrom: {secretKeyRef: {name: digitalocean-ddns, key: token}}
+          ports: [{name: http, containerPort: 8080}]
+          livenessProbe: {httpGet: {path: /healthz, port: http}}
+          readinessProbe: {httpGet: {path: /readyz, port: http}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true}
